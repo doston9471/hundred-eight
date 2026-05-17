@@ -233,4 +233,4 @@ docker build -t hundred-eight .
 
 ## License
 
-Add your license here (repository default is unset).
+This project is licensed under the [Apache License 2.0](LICENSE). See [LICENSE](LICENSE) in the repository root for the full text.
