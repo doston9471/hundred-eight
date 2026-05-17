@@ -64,6 +64,14 @@ class Round < ApplicationRecord
     turn_order.first&.to_s
   end
 
+  # After the opening-seven responder completes their turn, the starter may play again.
+  def clear_opening_seven_if_responded!(room_player)
+    return unless opening_seven_active?
+    return if room_player.id.to_s == opening_starter_room_player_id
+
+    update!(payload: (payload || {}).except("opening_seven"))
+  end
+
   def may_pass_without_drawing?
     return true if (payload || {})["drew_from_deck_this_turn"].present?
 

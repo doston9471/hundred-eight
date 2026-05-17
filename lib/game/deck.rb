@@ -12,7 +12,7 @@ module Game
       codes
     end
 
-    def self.shuffle(rng: Random)
+    def self.shuffle(rng: SecureRandom)
       full_deck_codes.shuffle(random: rng)
     end
   end

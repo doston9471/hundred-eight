@@ -21,8 +21,8 @@ RSpec.describe "opening seven play flow", type: :service do
       payload: { "opening_seven" => true })
   end
   let!(:rpb) { create(:round_player, round: round, room_player: rp_b, hand: %w[9|spades king|diamonds 2|hearts 3|hearts]) }
-  let!(:rpc) { create(:round_player, round: round, room_player: rp_c, hand: [ "7|clubs", "8|spades" ]) }
-  let!(:rpa) { create(:round_player, round: round, room_player: rp_a, hand: [ "10|diamonds" ]) }
+  let!(:rpc) { create(:round_player, round: round, room_player: rp_c, hand: [ "7|clubs", "9|hearts" ]) }
+  let!(:rpa) { create(:round_player, round: round, room_player: rp_a, hand: [ "10|hearts" ]) }
 
   it "does not enter seven_response when the second player plays a seven on the opening seven" do
     CardPlayService.play!(round: round, actor_round_player: rpc, card_code: "7|clubs")
@@ -30,6 +30,20 @@ RSpec.describe "opening seven play flow", type: :service do
     expect(r.phase).to eq("normal")
     expect(r.opening_seven_active?).to be false
     expect(r.current_turn_room_player_id).to eq(rp_a.id)
+  end
+
+  it "clears opening_seven when the responder plays a non-seven so the starter can play on their next turn" do
+    result = CardPlayService.play!(round: round, actor_round_player: rpc, card_code: "9|hearts")
+    expect(result.ok).to be true
+
+    r = round.reload
+    expect(r.phase).to eq("normal")
+    expect(r.opening_seven_active?).to be false
+    expect(r.current_turn_room_player_id).to eq(rp_a.id)
+
+    play_after = CardPlayService.play!(round: r, actor_round_player: rpa, card_code: "10|hearts")
+    expect(play_after.ok).to be true
+    expect(play_after.error).to be_nil
   end
 
   it "rejects the opening starter from playing while the opening seven is unresolved" do

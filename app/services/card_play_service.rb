@@ -76,6 +76,10 @@ class CardPlayService
           return Result.new(ok: false, error: "illegal play")
         end
 
+        responding_to_opening_seven = round.opening_seven_active? &&
+          room_player.id.to_s != round.opening_starter_room_player_id
+        round.clear_opening_seven_if_responded!(room_player) unless card.seven?
+
         new_hand = hand - [ card_code ]
         actor_round_player.update!(hand: new_hand)
         pl = (round.payload || {}).except("turn_single_draw_used")
@@ -95,11 +99,9 @@ class CardPlayService
         end
 
         if card.seven?
-          if round.opening_seven_active?
-            if room_player.id.to_s == round.opening_starter_room_player_id
-              return Result.new(ok: false, error: "you already took two cards for the opening seven")
-            end
-            pl = (round.payload || {}).except("opening_seven", "turn_single_draw_used", "drew_from_deck_this_turn")
+          if responding_to_opening_seven
+            round.clear_opening_seven_if_responded!(room_player)
+            pl = (round.payload || {}).except("turn_single_draw_used", "drew_from_deck_this_turn")
             round.update!(payload: pl)
             if new_hand.empty?
               RoundHandEmptyService.call!(round: round.reload, room_player: room_player)
@@ -111,28 +113,7 @@ class CardPlayService
           end
 
           if new_hand.empty?
-            if round.turn_order.size == 2
-              opponent_id = SevenResponseService.opponent_room_player_id(round, room_player.id)
-              SevenResponseService.apply_seven_penalty!(round, count: 2, victim_room_player_id: opponent_id, reason: "seven_take")
-              RoundHandEmptyService.call!(round: round.reload, room_player: room_player)
-              return Result.new(ok: true)
-            end
-
-            still_in_after = round.turn_order.size - round.out_room_player_ids.size - 1
-            if still_in_after <= 1
-              RoundHandEmptyService.call!(round: round.reload, room_player: room_player)
-              return Result.new(ok: true)
-            end
-
-            rid = room_player.id.to_s
-            TurnManager.advance!(round.reload, skip: 1)
-            RoundHandEmptyService.mark_player_out!(round.reload, room_player)
-            pl7 = Game::SevenChain.merge_start(
-              round.payload.except("turn_single_draw_used", "drew_from_deck_this_turn"),
-              root_room_player_id: rid
-            )
-            round.update!(phase: "seven_response", required_suit: nil, payload: pl7)
-            RoomBroadcaster.full_state(round.room)
+            finish_on_seven_with_empty_hand!(round, room_player)
             return Result.new(ok: true)
           end
 
@@ -215,7 +196,7 @@ class CardPlayService
       if card.seven?
         if new_hand.empty?
           end_eight_followup!(round)
-          RoundHandEmptyService.call!(round: round.reload, room_player: room_player)
+          finish_on_seven_with_empty_hand!(round, room_player)
           return Result.new(ok: true)
         end
 
@@ -360,6 +341,34 @@ class CardPlayService
       round.update!(phase: "normal", required_suit: nil)
       skip = card.ace? ? 2 : 1
       TurnManager.advance!(round.reload, skip: skip)
+    end
+
+    # Going out on a 7: in a 2-player round the opponent takes 2 before scoring; in 3+ the chain continues.
+    def finish_on_seven_with_empty_hand!(round, room_player)
+      round.reload
+
+      if round.turn_order.size == 2
+        opponent_id = SevenResponseService.opponent_room_player_id(round, room_player.id)
+        SevenResponseService.apply_seven_penalty!(round, count: 2, victim_room_player_id: opponent_id, reason: "seven_take")
+        RoundHandEmptyService.call!(round: round.reload, room_player: room_player)
+        return
+      end
+
+      still_in_after = round.turn_order.size - round.out_room_player_ids.size - 1
+      if still_in_after <= 1
+        RoundHandEmptyService.call!(round: round.reload, room_player: room_player)
+        return
+      end
+
+      rid = room_player.id.to_s
+      TurnManager.advance!(round.reload, skip: 1)
+      RoundHandEmptyService.mark_player_out!(round.reload, room_player)
+      pl7 = Game::SevenChain.merge_start(
+        round.payload.except("turn_single_draw_used", "drew_from_deck_this_turn"),
+        root_room_player_id: rid
+      )
+      round.update!(phase: "seven_response", required_suit: nil, payload: pl7)
+      RoomBroadcaster.full_state(round.room)
     end
 
     def try_finish_round!(round, actor_round_player)

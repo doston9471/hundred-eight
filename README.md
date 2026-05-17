@@ -180,16 +180,87 @@ Specs cover services, `lib/game`, models, helpers, Action Cable, and HTTP endpoi
 
 ---
 
-## Docker (production image)
+## Docker
 
-- **`Dockerfile`**: multi-stage build; **`ARG RUBY_VERSION=4.0.4`** for production alignment.
-- **`docker-compose.yml`**: local **PostgreSQL 16** only; the Rails app runs on the host via `make start` / `bin/dev` unless you extend Compose with a `web` service.
+| File | Purpose |
+|------|---------|
+| **`Dockerfile`** | Production image (Ruby **4.0.4** in the image; local dev uses `.ruby-version`). Used by **Heroku Container Registry**. |
+| **`docker-compose.yml`** | **Local dev only** — runs PostgreSQL 16. The Rails app runs on the host via `make start` / `bin/dev`. |
+| **`heroku.yml`** | Heroku container build, release (`db:prepare`), and web process. |
 
-Build production image (example):
+**docker-compose is not used on Heroku.** Heroku runs one container from `Dockerfile`, attaches **Heroku Postgres** (`DATABASE_URL`), and sets `PORT` for the web dyno. Solid Cache, Solid Queue, and Solid Cable share that database (same pattern as Rails 8 on Heroku).
+
+Build the image locally:
 
 ```bash
 docker build -t hundred-eight .
 ```
+
+---
+
+## Deploy to Heroku (container)
+
+Prerequisites: [Heroku CLI](https://devcenter.heroku.com/articles/heroku-cli), Docker (for `heroku container:push` on your machine or CI), and this repo.
+
+1. **Create the app** (container stack):
+
+   ```bash
+   heroku create your-app-name
+   heroku stack:set container -a your-app-name
+   ```
+
+2. **Postgres** (if not created via `app.json`):
+
+   ```bash
+   heroku addons:create heroku-postgresql:essential-0 -a your-app-name
+   ```
+
+3. **Config vars**:
+
+   ```bash
+   heroku config:set RAILS_MASTER_KEY="$(cat config/master.key)" -a your-app-name
+   heroku config:set SOLID_QUEUE_IN_PUMA=true -a your-app-name
+   heroku config:set APP_HOST=your-app-name.herokuapp.com -a your-app-name
+   ```
+
+   `RAILS_MASTER_KEY` is required (from `config/master.key` after `credentials:edit` or a fresh Rails app). `APP_HOST` is used for mailer URLs and host authorization.
+
+4. **Deploy** (build image on Heroku, run release migrations, roll out web):
+
+   ```bash
+   heroku container:login
+   heroku container:push web -a your-app-name
+   heroku container:release web -a your-app-name
+   ```
+
+   The image runs **Puma on `$PORT`** (not Thruster on port 80). If you see `bind: permission denied` on port 80, rebuild and release after pulling the latest `Dockerfile`.
+
+   Or push from git with the Heroku git remote if you use **heroku.yml** build automation:
+
+   ```bash
+   git push heroku main
+   ```
+
+   (Requires the app to use the container stack and `heroku.yml` in the repo root.)
+
+5. **Open** the app:
+
+   ```bash
+   heroku open -a your-app-name
+   ```
+
+6. **Logs / console**:
+
+   ```bash
+   heroku logs --tail -a your-app-name
+   heroku run bin/rails console -a your-app-name
+   ```
+
+**Notes**
+
+- Use at least one **web** dyno; `SOLID_QUEUE_IN_PUMA=true` runs background jobs in the same process (suitable for hobby/basic).
+- For production email (password reset), configure SMTP in credentials and set `APP_HOST`.
+- Scale websockets/realtime: Solid Cable uses Postgres; a single web dyno is enough for small groups; add dynos or upgrade Postgres for more load.
 
 ---
 

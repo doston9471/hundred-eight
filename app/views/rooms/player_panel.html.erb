@@ -67,11 +67,9 @@
         </p>
         <%= button_to "Take #{@round.seven_response_penalty_draws} cards", seven_take_room_path(@room), method: :post, class: "mt-4 w-full rounded-lg border border-slate-600 bg-slate-900 px-3 py-2 text-sm text-white hover:border-emerald-500" %>
       <% elsif my_turn && @round.phase == "eight_followup" %>
-        <% top = @round.top_discard_code %>
-        <% eight_legal = top && Game::Rules.any_legal_play?(@rp.hand_codes, top, required_suit: nil, phase: "eight_followup") %>
         <h3 class="mt-4 text-sm font-semibold text-amber-200">Follow your 8</h3>
-        <p class="mt-2 text-xs text-slate-400">Play another 8, any queen, or a card of the same suit as the top card. Chain plays from your hand until you play a non-8 matching card — that closes your 8 and ends your turn.</p>
-        <% if !eight_legal || !@round.payload["turn_single_draw_used"] %>
+        <p class="mt-2 text-xs text-slate-400">Play another 8, any queen, or a card of the same suit as the top card. If you have nothing to play, draw from the deck one card at a time — as many times as you like, even after you draw a card you could use to close your 8. When you play a non-8 matching card from your hand, that closes your 8 and ends your turn.</p>
+        <% if DrawCardService.draw_would_be_available?(@round) %>
           <%= button_to "Draw 1 card", optional_draw_room_path(@room), method: :post, class: "mt-4 w-full rounded-lg border border-slate-600 bg-slate-900 px-3 py-2 text-sm text-white hover:border-emerald-500" %>
         <% end %>
       <% elsif my_turn && @round.opening_seven_active? && @me.id.to_s != @round.opening_starter_room_player_id %>

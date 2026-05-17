@@ -37,6 +37,21 @@ RSpec.describe TurnOptionService, type: :service do
       result = described_class.optional_draw_one!(round: round, actor_round_player: rpa)
       expect(result.ok).to be false
     end
+
+    it "allows unlimited draws during eight follow-up even when a closing card is already in hand" do
+      round.update!(phase: "eight_followup", discard_pile: [ "8|hearts" ], draw_pile: %w[9|hearts 2|spades 3|clubs])
+      rpa.update!(hand: [])
+
+      expect(described_class.optional_draw_one!(round: round, actor_round_player: rpa).ok).to be true
+      expect(rpa.reload.hand_codes).to eq([ "9|hearts" ])
+      expect(round.reload.payload["turn_single_draw_used"]).to be_nil
+
+      expect(described_class.optional_draw_one!(round: round.reload, actor_round_player: rpa.reload).ok).to be true
+      expect(rpa.reload.hand_codes).to contain_exactly("9|hearts", "2|spades")
+
+      expect(described_class.optional_draw_one!(round: round.reload, actor_round_player: rpa.reload).ok).to be true
+      expect(rpa.reload.hand_codes.size).to eq(3)
+    end
   end
 
   describe ".pass_turn!" do

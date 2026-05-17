@@ -42,5 +42,8 @@ module HundredEight
 
     # Don't generate system test files.
     config.generators.system_tests = nil
+
+    # No image_processing gem; this app does not use Active Storage variants.
+    config.active_storage.variant_processor = :disabled
   end
 end

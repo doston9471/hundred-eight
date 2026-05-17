@@ -1,0 +1,18 @@
+{
+  "name": "Hundred Eight",
+  "description": "Online multiplayer card game 108",
+  "keywords": ["rails", "ruby", "postgresql"],
+  "stack": "container",
+  "formation": {
+    "web": {
+      "quantity": 1,
+      "size": "basic"
+    }
+  },
+  "env": {
+    "RAILS_ENV": "production",
+    "RAILS_LOG_TO_STDOUT": "enabled",
+    "SOLID_QUEUE_IN_PUMA": "true"
+  },
+  "addons": ["heroku-postgresql:essential-0"]
+}

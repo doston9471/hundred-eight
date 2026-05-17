@@ -27,25 +27,24 @@ class TurnOptionService
         if round.player_out?(room_player.id)
           return Result.new(ok: false, error: "you are out of this round")
         end
-        if round.phase == "eight_followup"
-          top = round.top_discard_code
-          legal = top && Game::Rules.any_legal_play?(
-            actor_round_player.hand_codes, top, required_suit: nil, phase: "eight_followup"
-          )
-          if legal && round.payload["turn_single_draw_used"]
-            return Result.new(ok: false, error: "already drew one card this turn")
-          end
-        elsif round.payload["turn_single_draw_used"]
+        if round.phase != "eight_followup" && round.payload["turn_single_draw_used"]
           return Result.new(ok: false, error: "already drew one card this turn")
         end
 
         code = DrawCardService.draw_one!(round.reload, round_player: actor_round_player.reload)
         return Result.new(ok: false, error: "no cards to draw") unless code
 
+        draw_reason = round.phase == "eight_followup" ? "eight_followup_draw" : "optional_turn"
         CardPlay.create!(round: round, round_player: actor_round_player, kind: :draw, card_code: code,
-          metadata: { reason: "optional_turn" })
+          metadata: { reason: draw_reason })
 
-        p = (round.payload || {}).merge("turn_single_draw_used" => true, "drew_from_deck_this_turn" => true)
+        p = (round.payload || {}).dup
+        if round.phase == "eight_followup"
+          p.delete("turn_single_draw_used")
+        else
+          p["turn_single_draw_used"] = true
+          p["drew_from_deck_this_turn"] = true
+        end
         round.update!(payload: p)
         RoomBroadcaster.full_state(round.room)
         Result.new(ok: true)
@@ -70,6 +69,8 @@ class TurnOptionService
 
         rp = round.round_player_for(actor_room_player)
         log_pass!(round, rp) if rp
+
+        round.clear_opening_seven_if_responded!(actor_room_player)
 
         if round.phase == "eight_followup"
           round.reload.update!(phase: "normal", required_suit: nil)

@@ -1,0 +1,26 @@
+# Heroku Container Registry deployment.
+# Requires: heroku stack:set container
+# Docs: https://devcenter.heroku.com/articles/build-docker-images-heroku
+#
+# docker-compose.yml is for local Postgres only — Heroku runs this Dockerfile
+# as a single web dyno and attaches Heroku Postgres (DATABASE_URL).
+
+setup:
+  addons:
+    - plan: heroku-postgresql
+      as: DATABASE
+
+build:
+  docker:
+    web: Dockerfile
+
+release:
+  image: web
+  command:
+    - ./bin/rails
+    - db:prepare
+    - db:load_secondary_schemas
+
+run:
+  # Must match Dockerfile CMD (container:push uses the image CMD, not shell form).
+  web: ./bin/rails server -b 0.0.0.0
