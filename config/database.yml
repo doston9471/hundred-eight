@@ -1,0 +1,65 @@
+# PostgreSQL. Versions 9.3 and up are supported.
+default: &default
+  adapter: postgresql
+  encoding: unicode
+  pool: <%= ENV.fetch("RAILS_MAX_THREADS") { 5 } %>
+
+development:
+  primary:
+    <<: *default
+    database: hundred_eight_development
+    <% if ENV["DB_HOST"].present? %>
+    host: <%= ENV["DB_HOST"] %>
+    username: <%= ENV.fetch("DB_USER", "postgres") %>
+    password: <%= ENV.fetch("DB_PASSWORD", "postgres") %>
+    <% end %>
+  cable:
+    <<: *default
+    database: hundred_eight_development_cable
+    <% if ENV["DB_HOST"].present? %>
+    host: <%= ENV["DB_HOST"] %>
+    username: <%= ENV.fetch("DB_USER", "postgres") %>
+    password: <%= ENV.fetch("DB_PASSWORD", "postgres") %>
+    <% end %>
+    migrations_paths: db/cable_migrate
+    schema_dump: cable_schema.rb
+
+test:
+  primary:
+    <<: *default
+    database: hundred_eight_test
+    <% if ENV["DB_HOST"].present? %>
+    host: <%= ENV["DB_HOST"] %>
+    username: <%= ENV.fetch("DB_USER", "postgres") %>
+    password: <%= ENV.fetch("DB_PASSWORD", "postgres") %>
+    <% end %>
+  cable:
+    <<: *default
+    database: hundred_eight_test_cable
+    <% if ENV["DB_HOST"].present? %>
+    host: <%= ENV["DB_HOST"] %>
+    username: <%= ENV.fetch("DB_USER", "postgres") %>
+    password: <%= ENV.fetch("DB_PASSWORD", "postgres") %>
+    <% end %>
+    migrations_paths: db/cable_migrate
+    schema_dump: cable_schema.rb
+
+production:
+  primary: &primary_production
+    <<: *default
+    database: hundred_eight_production
+    username: hundred_eight
+    password: <%= ENV["HUNDRED_EIGHT_DATABASE_PASSWORD"] %>
+  cache:
+    <<: *primary_production
+    database: hundred_eight_production_cache
+    migrations_paths: db/cache_migrate
+  queue:
+    <<: *primary_production
+    database: hundred_eight_production_queue
+    migrations_paths: db/queue_migrate
+  cable:
+    <<: *primary_production
+    database: hundred_eight_production_cable
+    migrations_paths: db/cable_migrate
+    schema_dump: cable_schema.rb

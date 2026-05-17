@@ -1,0 +1,15 @@
+<%= turbo_frame_tag "room_shell", class: "block w-full" do %>
+  <div class="rounded-2xl border border-slate-700 bg-slate-900/80 p-6 shadow-xl">
+    <% if room.finished? %>
+      <%= render "rooms/game_over", room: room %>
+    <% elsif room.waiting? %>
+      <%= render "rooms/lobby", room: room %>
+    <% elsif room.between_rounds? %>
+      <%= render "rooms/between_rounds", room: room %>
+    <% elsif room.current_round %>
+      <%= render "rooms/game", room: room, round: room.current_round %>
+    <% else %>
+      <%= render "rooms/lobby", room: room %>
+    <% end %>
+  </div>
+<% end %>

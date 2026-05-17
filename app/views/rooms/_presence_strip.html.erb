@@ -1,0 +1,8 @@
+<div id="presence_strip" class="mb-4 flex flex-wrap gap-3 rounded-xl border border-slate-800 bg-slate-900/50 px-4 py-3 text-sm text-slate-300">
+  <% RoomPlayersQuery.for_room(room).each do |rp| %>
+    <span class="inline-flex items-center gap-1.5">
+      <span class="h-2 w-2 shrink-0 rounded-full <%= rp.online? ? "bg-emerald-400" : "bg-slate-600" %>" title="<%= rp.online? ? "Online" : "Away" %>"></span>
+      <%= rp.user.username %>
+    </span>
+  <% end %>
+</div>

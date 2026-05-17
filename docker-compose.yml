@@ -1,0 +1,21 @@
+# Local development: PostgreSQL 16. Run Rails on the host with `DB_HOST=127.0.0.1` or use `config/database.yml` defaults.
+# Optional full stack: uncomment the `web` service and adjust paths.
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - hundred_eight_pg:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  hundred_eight_pg:

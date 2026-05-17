@@ -1,0 +1,38 @@
+<div class="mx-auto max-w-md px-4 py-10">
+  <h1 class="text-2xl font-semibold text-white">Create account</h1>
+  <%= form_with model: @user, url: registration_path, class: "mt-6 space-y-4" do |f| %>
+    <% if @user.errors.any? %>
+      <ul class="list-inside list-disc text-sm text-rose-300">
+        <% @user.errors.full_messages.each do |m| %>
+          <li><%= m %></li>
+        <% end %>
+      </ul>
+    <% end %>
+    <div>
+      <%= f.label :username, class: "block text-sm text-slate-300" %>
+      <%= f.text_field :username, required: true, class: "mt-1 w-full rounded-lg border border-slate-600 bg-slate-900 px-3 py-2 text-white" %>
+    </div>
+    <div>
+      <%= f.label :email, class: "block text-sm text-slate-300" %>
+      <%= f.email_field :email, required: true, class: "mt-1 w-full rounded-lg border border-slate-600 bg-slate-900 px-3 py-2 text-white" %>
+    </div>
+    <div>
+      <%= f.label :avatar_url, "Avatar URL (optional)", class: "block text-sm text-slate-300" %>
+      <%= f.url_field :avatar_url, class: "mt-1 w-full rounded-lg border border-slate-600 bg-slate-900 px-3 py-2 text-white" %>
+    </div>
+    <div>
+      <%= f.label :password, class: "block text-sm text-slate-300" %>
+      <%= f.password_field :password, required: true, class: "mt-1 w-full rounded-lg border border-slate-600 bg-slate-900 px-3 py-2 text-white" %>
+    </div>
+    <div>
+      <%= f.label :password_confirmation, class: "block text-sm text-slate-300" %>
+      <%= f.password_field :password_confirmation, required: true, class: "mt-1 w-full rounded-lg border border-slate-600 bg-slate-900 px-3 py-2 text-white" %>
+    </div>
+    <%= f.submit "Sign up", class: "w-full cursor-pointer rounded-lg bg-emerald-600 py-2.5 font-medium text-white hover:bg-emerald-500" %>
+  <% end %>
+
+  <p class="mt-6 text-center text-sm text-slate-400">
+    Already have an account?
+    <%= link_to "Sign in", new_session_path, class: "text-emerald-400 hover:text-emerald-300" %>
+  </p>
+</div>

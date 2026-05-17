@@ -1,0 +1,19 @@
+<div class="mx-auto max-w-3xl px-4 py-8">
+  <div class="flex flex-wrap items-center justify-between gap-4">
+    <h1 class="text-2xl font-semibold text-white">Your rooms</h1>
+    <%= link_to "New room", new_room_path, class: "rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-500" %>
+  </div>
+  <ul class="mt-6 space-y-3">
+    <% @rooms.each do |room| %>
+      <li>
+        <%= link_to room_path(room), class: "flex items-center justify-between rounded-xl border border-slate-700 bg-slate-900/60 px-4 py-3 text-slate-100 hover:border-emerald-700" do %>
+          <span><%= room.name.presence || "Room #{room.id.to_s.first(8)}" %></span>
+          <span class="text-xs uppercase text-slate-400"><%= room.status %></span>
+        <% end %>
+      </li>
+    <% end %>
+  </ul>
+  <% if @rooms.empty? %>
+    <p class="mt-6 text-slate-400">No rooms yet. Create one to play.</p>
+  <% end %>
+</div>

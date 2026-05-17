@@ -1,0 +1,10 @@
+<div class="space-y-4 text-center">
+  <h2 class="text-2xl font-semibold text-white">Game over</h2>
+  <% winner = room.active_non_eliminated_players.first %>
+  <% if winner %>
+    <p class="text-lg text-emerald-300">Winner: <%= winner.user.username %></p>
+  <% else %>
+    <p class="text-slate-300">No winner recorded.</p>
+  <% end %>
+  <%= link_to "Back to rooms", rooms_path, class: "inline-block rounded-lg border border-slate-600 px-4 py-2 text-white hover:bg-slate-800", data: { turbo_frame: "_top" } %>
+</div>

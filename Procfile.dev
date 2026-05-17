@@ -1,0 +1,3 @@
+# Optional Solid Queue: run `bin/jobs` in another terminal to process background jobs locally.
+web: bin/rails server
+css: bin/rails tailwindcss:watch

@@ -1,0 +1,81 @@
+<div class="mx-auto max-w-3xl px-4 py-6">
+  <div class="mb-6 flex flex-wrap items-center justify-between gap-3">
+    <div>
+      <h1 class="text-2xl font-semibold text-white"><%= @room.name.presence || "Room" %> — archive</h1>
+      <p class="mt-1 text-sm text-slate-400">Winners, losers, remaining cards, and score breakdown per round.</p>
+    </div>
+    <%= link_to "Back to table", room_path(@room), class: "rounded-lg border border-slate-600 px-3 py-2 text-sm text-slate-200 hover:bg-slate-800" %>
+  </div>
+
+  <% if @archive_rounds.any? %>
+    <div class="space-y-8">
+      <% @archive_rounds.each do |ar| %>
+        <article class="rounded-2xl border border-slate-800 bg-slate-900/60 p-5">
+          <h2 class="text-lg font-medium text-white">Round <%= ar.round.number %></h2>
+
+          <% if ar.winner_entry %>
+            <p class="mt-2 text-sm text-emerald-300">
+              Winner: <span class="font-medium text-emerald-100"><%= ar.winner_entry.username %></span>
+              <span class="text-emerald-400/80">(0 pts this round)</span>
+            </p>
+          <% end %>
+
+          <% if ar.loser_entries.any? %>
+            <div class="mt-4 space-y-4">
+              <% ar.loser_entries.each do |entry| %>
+                <section class="rounded-xl border border-rose-900/50 bg-rose-950/20 p-4">
+                  <h3 class="text-sm font-semibold text-rose-200">
+                    Lost round: <span class="text-rose-100"><%= entry.username %></span>
+                    <span class="font-normal text-rose-300/90">— <%= entry.points %> pts added</span>
+                  </h3>
+                  <% if entry.hand_breakdown.any? %>
+                    <ul class="mt-3 space-y-1 text-sm text-slate-300">
+                      <% entry.hand_breakdown.each do |b| %>
+                        <li class="flex justify-between gap-4 border-b border-slate-800/50 py-1">
+                          <span><%= card_short_label(b["code"]) %> <span class="text-slate-500">(<%= b["label"] %>)</span></span>
+                          <span><%= b["points"] %> pts</span>
+                        </li>
+                      <% end %>
+                    </ul>
+                    <p class="mt-2 text-xs text-slate-400">
+                      <% if entry.calculation.present? %>
+                        <%= entry.calculation %> = <span class="font-medium text-slate-200"><%= entry.points %></span>
+                      <% else %>
+                        Total: <span class="font-medium text-slate-200"><%= entry.points %></span>
+                      <% end %>
+                      <% if entry.bonus_points != 0 %>
+                        <span class="text-amber-300">(<%= entry.bonus_points %> bonus applied to running total)</span>
+                      <% end %>
+                    </p>
+                  <% elsif entry.hand.any? %>
+                    <p class="mt-2 text-sm text-slate-400">
+                      Cards left: <%= entry.hand.map { |c| card_short_label(c) }.join(", ") %>
+                    </p>
+                  <% else %>
+                    <p class="mt-2 text-sm text-slate-500">No cards recorded for this player.</p>
+                  <% end %>
+                </section>
+              <% end %>
+            </div>
+          <% else %>
+            <p class="mt-3 text-sm text-slate-500">No loser hand data for this round.</p>
+          <% end %>
+
+          <% if ar.other_entries.any? %>
+            <ul class="mt-4 space-y-2 border-t border-slate-800 pt-4 text-sm text-slate-400">
+              <% ar.other_entries.each do |entry| %>
+                <li><%= entry.username %>: <%= entry.points %> pts</li>
+              <% end %>
+            </ul>
+          <% end %>
+
+          <div class="mt-6 border-t border-slate-800 pt-4">
+            <%= render "rooms/move_history", round: ar.round, chronological: true, show_time: false, compact: true %>
+          </div>
+        </article>
+      <% end %>
+    </div>
+  <% else %>
+    <p class="text-slate-400">No completed rounds yet.</p>
+  <% end %>
+</div>

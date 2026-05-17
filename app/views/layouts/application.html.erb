@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title><%= content_for(:title) || "108 — Hundred Eight" %></title>
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <%= csrf_meta_tags %>
+    <%= csp_meta_tag %>
+    <%= action_cable_meta_tag %>
+    <%= yield :head %>
+    <link rel="icon" href="/icon.png" type="image/png">
+    <link rel="icon" href="/icon.svg" type="image/svg+xml">
+    <%= stylesheet_link_tag :app, "data-turbo-track": "reload" %>
+    <%= javascript_importmap_tags %>
+  </head>
+  <body class="min-h-screen bg-slate-950 text-slate-100 antialiased">
+    <header class="border-b border-slate-800 bg-slate-900/70 backdrop-blur">
+      <nav class="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-4 py-3">
+        <%= link_to "108", root_path, class: "text-lg font-bold tracking-tight text-white" %>
+        <div class="flex flex-wrap items-center gap-3 text-sm">
+          <% if current_user %>
+            <span class="text-slate-400"><%= current_user.username %></span>
+            <%= link_to "Rooms", rooms_path, class: "text-emerald-300 hover:underline" %>
+            <%= button_to "Sign out", session_path, method: :delete, class: "rounded-md border border-slate-600 px-2 py-1 text-slate-200 hover:bg-slate-800" %>
+          <% else %>
+            <%= link_to "Sign in", new_session_path, class: "text-slate-200 hover:underline" %>
+            <%= link_to "Sign up", new_registration_path, class: "text-emerald-300 hover:underline" %>
+          <% end %>
+        </div>
+      </nav>
+    </header>
+
+    <% flash.each do |type, msg| %>
+      <div class="mx-auto max-w-4xl px-4 pt-4">
+        <div class="<%= type.to_s == "notice" ? "border-emerald-800 bg-emerald-950/50 text-emerald-100" : "border-rose-800 bg-rose-950/50 text-rose-100" %> rounded-lg border px-3 py-2 text-sm">
+          <%= msg %>
+        </div>
+      </div>
+    <% end %>
+
+    <main class="mx-auto max-w-6xl px-4 py-8">
+      <%= yield %>
+    </main>
+  </body>
+</html>

@@ -1,0 +1,98 @@
+<%= turbo_frame_tag "room_player_panel" do %>
+  <% current_id = @round.current_turn_room_player_id %>
+  <% my_turn = current_id == @me.id %>
+  <% i_am_out = @round.player_out?(@me.id) %>
+  <div class="rounded-2xl border border-slate-800 bg-slate-950/50 p-4">
+    <% if @rp %>
+      <% if i_am_out %>
+        <p class="mb-3 text-sm text-emerald-200">You went out this round. The other players are still playing.</p>
+      <% end %>
+      <h3 class="text-sm font-semibold text-slate-300">Your hand</h3>
+      <div class="mt-2 flex flex-wrap gap-2">
+        <% @rp.hand_codes.each do |code| %>
+          <% card = Game::Card.parse(code) %>
+          <% if my_turn && @round.phase == "normal" %>
+            <%= button_to card_short_label(code), play_room_path(@room), params: { card_code: code }, method: :post, class: "min-w-[3.25rem] rounded-xl border border-slate-600 bg-slate-900 px-3 py-3 text-lg font-semibold text-white hover:border-emerald-500" %>
+          <% elsif my_turn && @round.phase == "queen_pick_suit" %>
+            <span class="inline-flex min-w-[3.25rem] items-center justify-center rounded-xl border border-slate-700 bg-slate-900/80 px-3 py-3 text-lg font-semibold text-slate-200"><%= card_short_label(code) %></span>
+          <% elsif my_turn && @round.phase == "ace_tail" %>
+            <%= button_to card_short_label(code), play_room_path(@room), params: { card_code: code }, method: :post, class: "min-w-[3.25rem] rounded-xl border border-slate-600 bg-slate-900 px-3 py-3 text-lg font-semibold text-white hover:border-emerald-500" %>
+          <% elsif my_turn && @round.phase == "seven_response" %>
+            <% if card.seven? %>
+              <%= button_to card_short_label(code), play_room_path(@room), params: { card_code: code }, method: :post, class: "min-w-[3.25rem] rounded-xl border border-slate-600 bg-slate-900 px-3 py-3 text-lg font-semibold text-white hover:border-emerald-500" %>
+            <% else %>
+              <span class="inline-flex min-w-[3.25rem] items-center justify-center rounded-xl border border-slate-700 bg-slate-900/80 px-3 py-3 text-lg font-semibold text-slate-200"><%= card_short_label(code) %></span>
+            <% end %>
+          <% elsif my_turn && @round.phase == "eight_followup" %>
+            <% top = @round.top_discard_code %>
+            <% legal = top && Game::Rules.legal_normal_play?(@rp.hand_codes, code, top, required_suit: nil, phase: "eight_followup") %>
+            <% if legal %>
+              <%= button_to card_short_label(code), play_room_path(@room), params: { card_code: code }, method: :post, class: "min-w-[3.25rem] rounded-xl border border-slate-600 bg-slate-900 px-3 py-3 text-lg font-semibold text-white hover:border-emerald-500" %>
+            <% else %>
+              <span class="inline-flex min-w-[3.25rem] items-center justify-center rounded-xl border border-slate-700 bg-slate-900/80 px-3 py-3 text-lg font-semibold text-slate-200"><%= card_short_label(code) %></span>
+            <% end %>
+          <% else %>
+            <span class="inline-flex min-w-[3.25rem] items-center justify-center rounded-xl border border-slate-700 bg-slate-900/80 px-3 py-3 text-lg font-semibold text-slate-200"><%= card_short_label(code) %></span>
+          <% end %>
+        <% end %>
+      </div>
+
+      <% if my_turn && @round.phase == "queen_pick_suit" %>
+        <h3 class="mt-4 text-sm font-semibold text-amber-200">Choose suit</h3>
+        <div class="mt-3 grid grid-cols-2 gap-2">
+          <% Game::Card::SUITS.each do |suit| %>
+            <%= button_to suit_room_path(@room), method: :post, params: { suit: suit }, class: "flex flex-col items-center gap-1 rounded-lg border border-slate-600 bg-slate-900 px-3 py-3 text-sm text-white hover:border-emerald-500" do %>
+              <span class="text-2xl font-semibold leading-none <%= suit_glyph_class(suit) %>" aria-hidden="true"><%= suit_glyph(suit) %></span>
+              <span class="text-xs capitalize text-slate-400"><%= suit %></span>
+            <% end %>
+          <% end %>
+        </div>
+      <% elsif my_turn && @round.phase == "ace_tail" %>
+        <h3 class="mt-4 text-sm font-semibold text-amber-200">Ace follow-up</h3>
+        <p class="mt-2 text-xs text-slate-400">Play an ace, a queen, or any card of the same suit as the ace. Or draw one card from the deck as many times as you like, then play when ready. Pass is available after you have taken at least one card from the deck (or when the deck cannot give a card).</p>
+        <%= button_to "Draw 1 card", ace_tail_draw_room_path(@room), method: :post, class: "mt-4 w-full rounded-lg border border-slate-600 bg-slate-900 px-3 py-2 text-sm text-white hover:border-emerald-500" %>
+        <% if @round.may_pass_without_drawing? %>
+          <%= button_to "Pass", ace_pass_room_path(@room), method: :post, class: "mt-4 w-full rounded-lg border border-dashed border-slate-500 px-3 py-2 text-sm text-slate-200 hover:bg-slate-800" %>
+        <% else %>
+          <p class="mt-4 text-xs text-slate-500">Draw at least one card before you can pass.</p>
+        <% end %>
+      <% elsif my_turn && @round.phase == "seven_response" %>
+        <h3 class="mt-4 text-sm font-semibold text-amber-200">Answer the seven</h3>
+        <p class="mt-2 text-xs text-slate-400">
+          <% if @round.turn_order.size == 2 %>
+            Stack another 7, or take 2 cards from the deck (always 2 in a two-player game, even when several sevens are stacked). Taking ends your turn; the next player in seat order plays.
+          <% else %>
+            Stack another 7, or take <%= @round.seven_response_penalty_draws %> cards (2 for each seven in this chain). Taking ends your turn; the next player still in the round plays.
+          <% end %>
+        </p>
+        <%= button_to "Take #{@round.seven_response_penalty_draws} cards", seven_take_room_path(@room), method: :post, class: "mt-4 w-full rounded-lg border border-slate-600 bg-slate-900 px-3 py-2 text-sm text-white hover:border-emerald-500" %>
+      <% elsif my_turn && @round.phase == "eight_followup" %>
+        <% top = @round.top_discard_code %>
+        <% eight_legal = top && Game::Rules.any_legal_play?(@rp.hand_codes, top, required_suit: nil, phase: "eight_followup") %>
+        <h3 class="mt-4 text-sm font-semibold text-amber-200">Follow your 8</h3>
+        <p class="mt-2 text-xs text-slate-400">Play another 8, any queen, or a card of the same suit as the top card. Chain plays from your hand until you play a non-8 matching card — that closes your 8 and ends your turn.</p>
+        <% if !eight_legal || !@round.payload["turn_single_draw_used"] %>
+          <%= button_to "Draw 1 card", optional_draw_room_path(@room), method: :post, class: "mt-4 w-full rounded-lg border border-slate-600 bg-slate-900 px-3 py-2 text-sm text-white hover:border-emerald-500" %>
+        <% end %>
+      <% elsif my_turn && @round.opening_seven_active? && @me.id.to_s != @round.opening_starter_room_player_id %>
+        <p class="mt-3 text-xs text-amber-200">Opening seven: the first player already took 2 cards. Play any legal card (a 7 counts as a normal card, not a stack).</p>
+      <% elsif my_turn %>
+        <p class="mt-3 text-xs text-slate-400">Play a card, draw one from the deck once this turn, or pass after you have drawn at least one card (or when the deck cannot give a card).</p>
+        <% unless @round.payload["turn_single_draw_used"] %>
+          <%= button_to "Draw 1 card (optional)", optional_draw_room_path(@room), method: :post, class: "mt-4 w-full rounded-lg border border-slate-600 bg-slate-900 px-3 py-2 text-sm text-white hover:border-emerald-500" %>
+        <% end %>
+        <% if @round.may_pass_without_drawing? %>
+          <%= button_to "Pass (no play)", turn_pass_room_path(@room), method: :post, class: "mt-4 w-full rounded-lg border border-dashed border-slate-500 px-3 py-2 text-sm text-slate-200 hover:bg-slate-800" %>
+        <% else %>
+          <p class="mt-4 text-xs text-slate-500">Draw at least one card before you can pass.</p>
+        <% end %>
+      <% else %>
+        <p class="mt-3 text-sm text-slate-500">Waiting for <%= @room.room_players.find_by(id: current_id)&.user&.username || "another player" %>…</p>
+      <% end %>
+    <% elsif @me %>
+      <p class="text-sm text-slate-400">You are eliminated and no longer in this round.</p>
+    <% else %>
+      <p class="text-sm text-slate-500">You are not seated at this table.</p>
+    <% end %>
+  </div>
+<% end %>

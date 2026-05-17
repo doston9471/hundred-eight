@@ -1,0 +1,38 @@
+<% round = room.latest_round %>
+<div class="space-y-6" data-controller="room-role" data-room-role-host-id-value="<%= room.host_id %>">
+  <h2 class="text-xl font-semibold text-white">Round <%= round&.number %> finished</h2>
+  <% if round %>
+    <table class="w-full text-left text-sm text-slate-200">
+      <thead>
+        <tr class="border-b border-slate-700 text-slate-400">
+          <th class="py-2">Player</th>
+          <th class="py-2">Hand points</th>
+          <th class="py-2">Bonus</th>
+          <th class="py-2">Total</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% round.score_entries.includes(:room_player).each do |se| %>
+          <tr class="border-b border-slate-800">
+            <td class="py-2"><%= se.room_player.user.username %></td>
+            <td class="py-2"><%= se.points %></td>
+            <td class="py-2"><%= se.bonus_points %></td>
+            <td class="py-2"><%= se.room_player.total_score %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  <% end %>
+
+  <% survivors = room.active_non_eliminated_players %>
+  <% if survivors.count < 2 %>
+    <p class="text-slate-300">Game complete.</p>
+  <% else %>
+    <div data-room-role-target="hostOnly" class="hidden">
+      <%= button_to "Start next round", next_round_room_path(room), method: :post, form: { data: { turbo_frame: "_top" } }, class: "rounded-lg bg-emerald-600 px-4 py-2 font-medium text-white hover:bg-emerald-500" %>
+    </div>
+    <div data-room-role-target="guestOnly" class="hidden">
+      <p class="text-slate-400">Waiting for host to start the next round.</p>
+    </div>
+  <% end %>
+</div>

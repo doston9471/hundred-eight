@@ -1,0 +1,64 @@
+<% current_id = round.current_turn_room_player_id %>
+<% top = round.top_discard_code %>
+
+<div class="grid gap-8 lg:grid-cols-[minmax(12rem,1fr)_minmax(0,2fr)_minmax(12rem,1fr)]">
+  <%= render "rooms/move_history", round: round %>
+
+  <div class="space-y-6">
+    <div class="flex flex-wrap items-center gap-3 rounded-xl border border-slate-800 bg-slate-900/50 px-3 py-2 text-xs text-slate-300">
+      <span class="font-medium uppercase tracking-wide text-slate-500">Suits</span>
+      <% %w[hearts spades clubs diamonds].each do |s| %>
+        <span class="inline-flex items-center gap-1.5 rounded-md border border-slate-700/80 bg-slate-950/60 px-2 py-1">
+          <span class="text-base font-semibold leading-none <%= suit_glyph_class(s) %>" aria-hidden="true"><%= suit_glyph(s) %></span>
+          <span class="capitalize text-slate-400"><%= s %></span>
+        </span>
+      <% end %>
+    </div>
+
+    <div class="flex flex-wrap items-end gap-4">
+      <div class="rounded-2xl border border-slate-700 bg-slate-950 px-5 py-4 shadow-inner">
+        <p class="text-xs font-medium uppercase tracking-wide text-slate-500">Top discard</p>
+        <p class="mt-1 text-3xl font-bold text-white"><%= top ? card_short_label(top) : "—" %></p>
+      </div>
+      <div class="rounded-2xl border border-slate-700 bg-slate-950 px-5 py-4">
+        <p class="text-xs font-medium uppercase tracking-wide text-slate-500">Draw pile</p>
+        <p class="mt-1 text-3xl font-bold text-white"><%= round.draw_pile.size %></p>
+      </div>
+      <% if round.required_suit.present? %>
+        <p class="text-sm text-amber-200">Leading suit: <span class="font-semibold capitalize"><%= round.required_suit %></span></p>
+      <% end %>
+      <% if round.phase == "eight_followup" %>
+        <p class="text-sm text-amber-300">Eight follow-up: play another 8, any queen, or match the top suit — chain plays, then next player.</p>
+      <% end %>
+      <% if round.phase == "ace_tail" %>
+        <p class="text-sm text-amber-300">Ace follow-up: play, draw one card as many times as you like, or pass after at least one draw (or if the deck cannot give a card).</p>
+      <% end %>
+    </div>
+
+    <div>
+      <h3 class="text-sm font-semibold uppercase tracking-wide text-slate-400">Table</h3>
+      <ul class="mt-3 divide-y divide-slate-800 rounded-xl border border-slate-800">
+        <% RoomPlayersQuery.for_room(room).each do |p| %>
+          <% out_this_round = round.player_out?(p.id) %>
+          <li class="flex flex-wrap items-center justify-between gap-2 px-4 py-3 text-sm <%= p.id == current_id ? "bg-emerald-950/40 text-emerald-100" : "text-slate-200" %>">
+            <span class="flex items-center gap-2">
+              <%= p.user.username %>
+              <% if out_this_round %><span class="text-xs text-emerald-300">out</span><% end %>
+              <% if p.eliminated? %><span class="text-xs text-rose-300">eliminated</span><% end %>
+            </span>
+            <span class="text-slate-400"><%= p.total_score %> pts</span>
+          </li>
+        <% end %>
+      </ul>
+    </div>
+  </div>
+
+  <%= turbo_frame_tag "room_player_panel",
+        src: room_player_panel_frame_src(room, round),
+        loading: "eager",
+        class: "block min-h-[6rem]" do %>
+    <div class="rounded-2xl border border-slate-800 bg-slate-950/50 p-4">
+      <p class="text-sm text-slate-500">Loading your hand…</p>
+    </div>
+  <% end %>
+</div>

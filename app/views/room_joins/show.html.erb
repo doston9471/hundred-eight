@@ -1,0 +1,12 @@
+<div class="mx-auto max-w-lg px-4 py-16 text-center">
+  <h1 class="text-2xl font-semibold text-white">Join room</h1>
+  <p class="mt-4 text-slate-300">You’ve been invited to <span class="font-medium text-white"><%= @room.name.presence || "a game" %></span>.</p>
+  <% if current_user %>
+    <%= button_to "Join now", room_join_path(@token), method: :post, class: "mt-8 w-full rounded-lg bg-emerald-600 py-3 font-medium text-white hover:bg-emerald-500" %>
+  <% else %>
+    <div class="mt-8 space-y-3">
+      <%= link_to "Sign in", new_session_path, class: "block w-full rounded-lg bg-white py-3 font-medium text-slate-900" %>
+      <%= link_to "Create account", new_registration_path, class: "block w-full rounded-lg border border-slate-600 py-3 font-medium text-white hover:bg-slate-800" %>
+    </div>
+  <% end %>
+</div>
