@@ -72,10 +72,12 @@
         <% if DrawCardService.draw_would_be_available?(@round) %>
           <%= button_to "Draw 1 card", optional_draw_room_path(@room), method: :post, class: "mt-4 w-full rounded-lg border border-slate-600 bg-slate-900 px-3 py-2 text-sm text-white hover:border-emerald-500" %>
         <% end %>
-      <% elsif my_turn && @round.opening_seven_active? && @me.id.to_s != @round.opening_starter_room_player_id %>
-        <p class="mt-3 text-xs text-amber-200">Opening seven: the first player already took 2 cards. Play any legal card (a 7 counts as a normal card, not a stack).</p>
       <% elsif my_turn %>
-        <p class="mt-3 text-xs text-slate-400">Play a card, draw one from the deck once this turn, or pass after you have drawn at least one card (or when the deck cannot give a card).</p>
+        <% if @round.opening_seven_active? && @me.id.to_s != @round.opening_starter_room_player_id %>
+          <p class="mt-3 text-xs text-amber-200">Opening seven: the first player already took 2 cards. Play any legal card (a 7 counts as a normal card, not a stack), draw one from the deck if you cannot play, or pass after drawing.</p>
+        <% else %>
+          <p class="mt-3 text-xs text-slate-400">Play a card, draw one from the deck once this turn, or pass after you have drawn at least one card (or when the deck cannot give a card).</p>
+        <% end %>
         <% unless @round.payload["turn_single_draw_used"] %>
           <%= button_to "Draw 1 card (optional)", optional_draw_room_path(@room), method: :post, class: "mt-4 w-full rounded-lg border border-slate-600 bg-slate-900 px-3 py-2 text-sm text-white hover:border-emerald-500" %>
         <% end %>

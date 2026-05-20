@@ -40,4 +40,32 @@ RSpec.describe "Room player panel", type: :request do
     expect(response.body).to include("K♠")
     expect(response.body).not_to include("6♥")
   end
+
+  it "shows draw and pass for the opening-seven responder when they cannot play" do
+    room = create(:room, :with_guest, host: host)
+    host_rp = room.room_players.find_by!(user: host)
+    guest_rp = room.room_players.where.not(user_id: host.id).first!
+    guest_user = guest_rp.user
+    round = create(:round,
+      room: room,
+      number: 1,
+      status: :in_progress,
+      phase: "normal",
+      draw_pile: [ "2|spades" ],
+      discard_pile: [ "7|hearts" ],
+      turn_order: [ host_rp.id, guest_rp.id ],
+      current_turn_index: 1,
+      required_suit: nil,
+      payload: { "opening_seven" => true })
+    create(:round_player, round: round, room_player: host_rp, hand: %w[6|hearts 7|clubs 8|diamonds 9|spades])
+    create(:round_player, round: round, room_player: guest_rp, hand: [ "king|spades", "ace|diamonds" ])
+
+    sign_in(guest_user)
+    get player_panel_room_path(room, round_id: round.id, v: "1")
+
+    expect(response).to have_http_status(:ok)
+    expect(response.body).to include("Opening seven")
+    expect(response.body).to include("Draw 1 card")
+    expect(response.body).to include("Draw at least one card before you can pass")
+  end
 end
