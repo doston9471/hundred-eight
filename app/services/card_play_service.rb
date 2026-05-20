@@ -329,7 +329,9 @@ class CardPlayService
       # With only two players still in the round, the six player keeps the turn (after the penalty draw).
       # With three or more, play passes to the next active seat after the six player (penalty victim does not play).
       if round.turn_order.size == 2 || round.players_still_in_round_count <= 2
-        round.update!(phase: "normal", required_suit: nil, current_turn_index: idx)
+        payload = (round.payload || {}).except("turn_single_draw_used", "drew_from_deck_this_turn")
+          .merge("six_followup_continue" => true)
+        round.update!(phase: "normal", required_suit: nil, current_turn_index: idx, payload: payload)
       else
         round.update!(phase: "normal", required_suit: nil)
         TurnManager.advance!(round, skip: 1)

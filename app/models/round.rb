@@ -72,8 +72,19 @@ class Round < ApplicationRecord
     update!(payload: (payload || {}).except("opening_seven"))
   end
 
+  def six_followup_continue?
+    (payload || {})["six_followup_continue"] == true
+  end
+
   def may_pass_without_drawing?
-    return true if (payload || {})["drew_from_deck_this_turn"].present?
+    pl = payload || {}
+    if pl["six_followup_continue"]
+      return true if pl["drew_from_deck_this_turn"].present?
+
+      return !DrawCardService.draw_would_be_available?(self)
+    end
+
+    return true if pl["drew_from_deck_this_turn"].present?
 
     !DrawCardService.draw_would_be_available?(self)
   end

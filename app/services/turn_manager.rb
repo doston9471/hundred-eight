@@ -39,7 +39,7 @@ module TurnManager
     skip.times do
       idx = next_active_index(round.turn_order, out, idx)
     end
-    payload = (round.payload || {}).except("turn_single_draw_used", "drew_from_deck_this_turn")
+    payload = (round.payload || {}).except("turn_single_draw_used", "drew_from_deck_this_turn", "six_followup_continue")
     round.update!(current_turn_index: idx, payload: payload)
     round
   end
