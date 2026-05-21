@@ -377,6 +377,9 @@ class CardPlayService
       actor_round_player.reload
       return false unless actor_round_player.hand_codes.empty?
 
+      # Empty hand during a follow-up phase must resolve that phase first (e.g. close an 8 from the deck).
+      return false if round.reload.phase.in?(%w[eight_followup queen_pick_suit ace_tail])
+
       result = RoundHandEmptyService.call!(round: round.reload, room_player: actor_round_player.room_player)
       result.status != :already_out
     end
